@@ -1,0 +1,45 @@
+version: '2'
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    command: server
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      PORT: 5000
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: "INFO"
+      REDASH_REDIS_URL: "redis://redis:6379/0"
+      REDASH_DATABASE_URL: "postgresql://postgres@postgres/postgres"
+      REDASH_COOKIE_SECRET: ${{ secrets.REDASH_COOKIE_SECRET }}
+      REDASH_SECRET_KEY: ${{ secrets.REDASH_SECRET_KEY }}
+      REDASH_WEB_WORKERS: 4
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    command: scheduler
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: "INFO"
+      REDASH_REDIS_URL: "redis://redis:6379/0"
+      REDASH_DATABASE_URL: "postgresql://postgres@postgres/postgres"
+      QUEUES: "queries,scheduled_queries,celery"
+      WORKERS_COUNT: 2
+  redis:
+    image: redis:3-alpine
+  postgres:
+    image: postgres:9.6-alpine
+    # volumes:
+    #   - /opt/postgres-data:/var/lib/postgresql/data
+  nginx:
+    image: redash/nginx:latest
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    links:
+      - server:redash
