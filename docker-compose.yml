@@ -30,7 +30,7 @@ services:
       QUEUES: "queries,scheduled_queries,celery"
       WORKERS_COUNT: 2
   redis:
-    image: redis:3-alpine
+    image: redis:5.0-alpine
   postgres:
     image: postgres:9.6-alpine
     # volumes:
